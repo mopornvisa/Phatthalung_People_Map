@@ -1,0 +1,17 @@
+
+ @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body {
+      font-family:'Prompt',system-ui,sans-serif;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background: linear-gradient(-45deg, #CFEFF3, #DFF7EF, #BFE3EA, #F0F8FB);
+      background-size: 300% 300%;
+      animation: gradientMove 12s ease infinite;
+    }

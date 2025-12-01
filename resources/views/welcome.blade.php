@@ -6,12 +6,15 @@
   <title>Phatthalung People Map</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 </head>
 
 <body 
+
   class="m-0"
   style="font-family:'Prompt',system-ui,sans-serif;
          min-height:100vh;
@@ -40,6 +43,7 @@
             ระบบด้านสุขภาพจังหวัดพัทลุง
           </p>
 
+
           <div class="d-flex flex-column flex-sm-row justify-content-center justify-content-lg-start gap-2">
             <a href="{{ url('/') }}" 
                class="btn btn-sm px-4 fw-semibold shadow-sm" 
@@ -56,97 +60,71 @@
                style="border-radius:50px;background-color:#0B7F6F;color:#fff;">
               ลงทะเบียน
             </a>
+      @if(session('user_firstname'))
+    <a href="{{ url('/logout') }}" 
+       class="btn btn-sm px-4 fw-semibold shadow-sm"
+       style="border-radius:50px;background-color:#0B7F6F;color:#fff;">
+        ออกจากระบบ ({{ session('user_firstname') }})
+    </a>
+ @endif
+
+
+
+
+
           </div>
+          
         </div>
 
       </div>
     </div>
   </div>
 
-<link rel="stylesheet" 
+ <link rel="stylesheet" 
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" 
+ <link rel="stylesheet" 
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <div class="container mt-4">
+  
+<div class="dropdown mb-3">
 
-  <!-- ปุ่มจังหวัด -->
-  <a href="#" 
-     class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1 shadow-sm"
+  <!-- ปุ่มบน -->
+  <button class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1 shadow-sm dropdown-toggle"
+     id="districtDropdown"
+     data-bs-toggle="dropdown"
+     aria-expanded="false"
      style="background-color:#0B7F6F; color:#fff; border-radius:6px;">
     <i class="bi bi-house-door-fill"></i>
     จังหวัดพัทลุง
-  </a>
+  </button>
 
-  <!-- กล่องลิสต์อำเภอ -->
-  <div class="p-3 bg-white rounded shadow-sm border">
+  <!-- เมนูรายการอำเภอ -->
+  <ul class="dropdown-menu shadow rounded-3 border-0"
+      aria-labelledby="districtDropdown"
+      style="min-width:240px;">
 
-    <div class="d-flex flex-wrap gap-2 small">
+    <li><a class="dropdown-item py-2" href="#">อ.เมืองพัทลุง</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.กงหรา</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.เขาชัยสน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ควนขนุน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ตะโหมด</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.บางแก้ว</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ปากพะยูน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ศรีบรรพต</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ป่าบอน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ป่าพะยอม</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ศรีนครินทร์</a></li>
 
-      <!-- ลิงก์อำเภอ -->
-      <a href="#" 
-         class="text-decoration-none px-2 py-1 rounded"
-         style="color:#0B7F6F;">
-        เมืองพัทลุง
-      </a>
-      <span class="text-secondary">/</span>
+  </ul>
 
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        กงหรา
-      </a>
-      <span class="text-secondary">/</span>
+</div>
 
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        เขาชัยสน
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ตะโหมด
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ควนขนุน
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ปากพะยูน
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ศรีบรรพต
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ป่าบอน
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        บางแก้ว
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ป่าพะยอม
-      </a>
-      <span class="text-secondary">/</span>
-
-      <a href="#" class="text-decoration-none px-2 py-1 rounded" style="color:#0B7F6F;">
-        ศรีนครินทร์
-      </a>
-
-    </div>
-  </div>
 
 </div>
 
   <!-- 🔽 ส่วน Dashboard -->
-<div class="container my-5">
+ <div class="container my-8">
   <h4 class="fw-bold mb-4 text-center" style="color:#0B5B6B;">
     Dashboard สรุปข้อมูลภาพรวม
   </h4>
@@ -178,7 +156,7 @@
         <div class="card-body">
           <h6 class="fw-semibold text-secondary mb-1">จำนวนครัวเรือนทั้งหมด</h6>
           <h3 class="fw-bold" style="color:#0B7F6F;">1,245</h3>
-          <p class="small text-muted mb-0">(ทั้งหมด)</p>
+          <p class="small text-muted mb-0">(ครัวเรือน)</p>
         </div>
       </div>
     </div>
@@ -193,13 +171,10 @@
         <div class="card-body">
           <h6 class="fw-semibold text-secondary mb-1">จำนวนสมาชิก</h6>
           <h3 class="fw-bold" style="color:#E67E22;">2,000</h3>
-          <p class="small text-muted mb-0">(ทั้งหมด)</p>
+          <p class="small text-muted mb-0">(คน)</p>
         </div>
       </div>
     </div>
-
-   
-
   </div>
 </div>
 
@@ -217,7 +192,7 @@
       >
         <h6 class="fw-semibold text-secondary mb-1">ผู้ป่วยเรื้อรัง</h6>
         <h3 class="fw-bold" style="color:#0B7F6F;">2,340</h3>
-        <p class="small text-muted mb-0">DM • HT • CKD</p>
+        <p class="small text-muted mb-0">(คน)</p>
       </div>
     </div>
 

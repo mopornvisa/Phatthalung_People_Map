@@ -74,24 +74,18 @@
             </div>
 
             <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">ประเภทผู้ใช้</label>
-              <select name="user_type" class="form-select form-select-sm rounded-3 shadow-sm" required>
-                <option value="">-- เลือกประเภทผู้ใช้ --</option>
-                <option value="government">หน่วยงานภาครัฐ</option>
-                <option value="admin">ดูแลระบบ</option>
-                <option value="researcher">นักวิจัย</option>
-                <option value="volunteer">อาสาสมัคร</option>
-              </select>
-            </div>
+  <label class="form-label small text-secondary">ประเภทผู้ใช้</label>
+  <select name="user_type" class="form-select form-select-sm rounded-3 shadow-sm" required>
+      <option value="">-- เลือกประเภทผู้ใช้ --</option>
+      <option value="1">หน่วยงานภาครัฐ</option>
+      <option value="2">ดูแลระบบ</option>
+      <option value="3">นักวิจัย</option>
+      <option value="4">อาสาสมัคร</option>
+  </select>
+</div>
 
-            <div class="col-md-6 text-start mt-1">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="remember" name="remember">
-                <label class="form-check-label small text-secondary" for="remember">
-                  จดจำฉันไว้
-                </label>
-              </div>
-            </div>
+
+          
           </div>
 
           <button
@@ -114,6 +108,17 @@
     </div>
   </div>
 </div>
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
 
 
 

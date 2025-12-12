@@ -79,13 +79,10 @@
       <option value="">-- เลือกประเภทผู้ใช้ --</option>
       <option value="1">หน่วยงานภาครัฐ</option>
       <option value="2">ดูแลระบบ</option>
-      <option value="3">นักวิจัย</option>
-      <option value="4">อาสาสมัคร</option>
+      <option value="3">ผู้ช่วยวิจัย/นักวิจัย/OM</option>
   </select>
 </div>
 
-
-          
           </div>
 
           <button

@@ -1,44 +1,47 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\HouseholdSurveyController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
 
+// test
+Route::get('/test', function () {
+    return view('test');
+});
+
+// หน้า household_64 (ใช้ Controller ดึงข้อมูล)
+Route::get('/household_64', [HouseholdSurveyController::class, 'index'])
+     ->name('household_64');
+
+// หน้าแรก
 Route::get('/', function () {
     return view('welcome');
 });
+
+// ตัวอย่าง Hello
 Route::get('/hello', function () {
     return "Hello laravel";
 });
-Route::get('/login', function () {
-    session()->flush();
-    return view('login');
-});
+
+// Register
 Route::get('/register', function () {
     return view('register');
 });
-use App\Http\Controllers\RegisterController;
-
 Route::post('/register', [RegisterController::class, 'store']);
 
-use App\Http\Controllers\LoginController;
-
+// Login
 Route::get('/login', [LoginController::class, 'showLoginForm']);
 Route::post('/login', [LoginController::class, 'login']);
- 
+
+// Logout
 Route::get('/logout', function () {
-    session()->flush(); // ลบ session ทั้งหมด
-    return redirect('/'); // กลับไปหน้าแรก
+    session()->flush();
+    return redirect('/');
 });
-
-

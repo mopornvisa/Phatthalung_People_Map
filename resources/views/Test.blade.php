@@ -87,60 +87,38 @@
 
 <div class="container mt-4">
   
-<div class="d-flex align-items-center gap-3 mb-3">
+<div class="dropdown mb-3">
 
-  <!-- Dropdown จังหวัด -->
-  <div class="dropdown">
-    <button class="btn btn-sm dropdown-toggle shadow-sm"
-      id="districtDropdown"
-      data-bs-toggle="dropdown"
-      aria-expanded="false"
-      style="background-color:#0B7F6F; color:#fff; border-radius:6px;">
-      <i class="bi bi-geo-alt-fill"></i>
-      จังหวัดพัทลุง
-    </button>
+  <!-- ปุ่มบน -->
+  <button class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1 shadow-sm dropdown-toggle"
+     id="districtDropdown"
+     data-bs-toggle="dropdown"
+     aria-expanded="false"
+     style="background-color:#0B7F6F; color:#fff; border-radius:6px;">
+    <i class="bi bi-house-door-fill"></i>
+    จังหวัดพัทลุง
+  </button>
 
-    <ul class="dropdown-menu rounded-3 border-0 shadow"
-        aria-labelledby="districtDropdown"
-        style="min-width:240px;">
-      <li><a class="dropdown-item py-2" href="#">อ.เมืองพัทลุง</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.กงหรา</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.เขาชัยสน</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ควนขนุน</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ตะโหมด</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.บางแก้ว</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ปากพะยูน</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ศรีบรรพต</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ป่าบอน</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ป่าพะยอม</a></li>
-      <li><a class="dropdown-item py-2" href="#">อ.ศรีนครินทร์</a></li>
-    </ul>
-  </div>
+  <!-- เมนูรายการอำเภอ -->
+  <ul class="dropdown-menu shadow rounded-3 border-0"
+      aria-labelledby="districtDropdown"
+      style="min-width:240px;">
 
-  <!-- Dropdown ปีที่สำรวจ -->
-  <div class="dropdown">
-    <button class="btn btn-sm dropdown-toggle shadow-sm"
-      id="surveyYearDropdown"
-      data-bs-toggle="dropdown"
-      aria-expanded="false"
-      style="background-color:#0B7F6F; color:#fff; border-radius:6px;">
-      <i class="bi bi-calendar-event-fill"></i>
-      ปีที่สำรวจ
-    </button>
+    <li><a class="dropdown-item py-2" href="#">อ.เมืองพัทลุง</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.กงหรา</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.เขาชัยสน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ควนขนุน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ตะโหมด</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.บางแก้ว</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ปากพะยูน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ศรีบรรพต</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ป่าบอน</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ป่าพะยอม</a></li>
+    <li><a class="dropdown-item py-2" href="#">อ.ศรีนครินทร์</a></li>
 
-    <ul class="dropdown-menu rounded-3 border-0 shadow"
-        aria-labelledby="surveyYearDropdown"
-        style="min-width:220px;">
-      <li><a class="dropdown-item py-2 px-3" href="#">2568</a></li>
-      <li><a class="dropdown-item py-2 px-3" href="#">2567</a></li>
-      <li><a class="dropdown-item py-2 px-3" href="#">2566</a></li>
-      <li><a class="dropdown-item py-2 px-3" href="#">2565</a></li>
-      <li><a class="dropdown-item py-2 px-3" href="household_64">2564</a></li>
-    </ul>
-  </div>
+  </ul>
 
 </div>
-
 
 
 </div>

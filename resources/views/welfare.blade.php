@@ -80,13 +80,15 @@
   $notReceivedCount = (int)($counts['not_received'] ?? 0);
 
   $types = [
-    'a7_1' => 'เด็กแรกเกิด',
-    'a7_2' => 'เบี้ยผู้สูงอายุ/คนชรา',
-    'a7_3' => 'เบี้ยคนพิการ',
-    'a7_4' => 'ประกันสังคม (ม.33)',
-    'a7_5' => 'ประกันตนเอง (ม.40)',
-    'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
-  ];
+  'a7_1' => 'เด็กแรกเกิด',
+  'a7_2' => 'เบี้ยผู้สูงอายุ/คนชรา',
+  'a7_3' => 'เบี้ยคนพิการ',
+  'a7_4' => 'ประกันสังคม (ม.33)',
+  'a7_5' => 'ประกันตนเอง (ม.40)',
+  'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
+  'unknown' => 'ไม่ระบุ', // ✅ เพิ่ม
+];
+
 
   $welfareLabel =
     $welfare === 'received' ? 'ได้รับ' :
@@ -333,114 +335,123 @@
               </th>
 
               {{-- ตัวกรองสวัสดิการ --}}
-              <th>
-                <div class="dropdown">
-                  <button class="btn btn-sm dropdown-toggle w-100"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-bs-auto-close="outside"
-                          data-bs-boundary="viewport"
-                          aria-expanded="false"
-                          style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
-                    <i class="bi bi-funnel-fill text-success me-1"></i>
-                    ตัวกรองข้อมูลสวัสดิการ
-                  </button>
+<th>
+  <div class="dropdown">
+    <button class="btn btn-sm dropdown-toggle w-100"
+            type="button"
+            data-bs-toggle="dropdown"
+            data-bs-auto-close="outside"
+            data-bs-boundary="viewport"
+            aria-expanded="false"
+            style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
+      <i class="bi bi-funnel-fill text-success me-1"></i>
+      ตัวกรองข้อมูลสวัสดิการ
+    </button>
 
-                  <div class="dropdown-menu p-3 border-0 shadow rounded-4"
-                       style="width:380px; max-width:90vw; z-index:2000;">
+    <div class="dropdown-menu p-3 border-0 shadow rounded-4"
+         style="width:380px; max-width:90vw; z-index:2000;">
 
-                    <div class="overflow-auto overflow-x-hidden" style="max-height:60vh;">
+      <div class="overflow-auto overflow-x-hidden" style="max-height:60vh;">
 
-                      <div class="fw-semibold text-secondary mb-2">
-                        ขั้นตอนที่ 1 : เลือกสถานะสวัสดิการ
-                      </div>
-                      <div class="d-flex gap-2 mb-3 flex-wrap">
-                        <button type="button"
-                                class="btn btn-sm {{ $welfare==='' ? 'btn-success' : 'btn-outline-success' }}"
-                                onclick="setWelfare('', true)">
-                          ทั้งหมด
-                        </button>
-                        <button type="button"
-                                class="btn btn-sm {{ $welfare==='received' ? 'btn-success' : 'btn-outline-success' }}"
-                                onclick="setWelfare('received', true)">
-                          ได้รับสวัสดิการ
-                        </button>
-                        <button type="button"
-                                class="btn btn-sm {{ $welfare==='not_received' ? 'btn-secondary' : 'btn-outline-secondary' }}"
-                                onclick="setWelfare('not_received', true)">
-                          ไม่ได้รับสวัสดิการ
-                        </button>
-                      </div>
+        <div class="fw-semibold text-secondary mb-2">
+          ขั้นตอนที่ 1 : เลือกสถานะสวัสดิการ
+        </div>
 
-                      <div class="fw-semibold text-secondary mb-2">
-                        ขั้นตอนที่ 2 : เลือกประเภทสวัสดิการ
-                      </div>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <button type="button"
+                  class="btn btn-sm {{ $welfare==='' ? 'btn-success' : 'btn-outline-success' }}"
+                  onclick="setWelfare('', true)">
+            ทั้งหมด
+          </button>
 
-                      <div class="row g-2 mb-3">
-                        @foreach($types as $key=>$label)
-                          <div class="col-6">
-                            <label class="form-check w-100">
-                              <input class="form-check-input"
-                                     type="checkbox"
-                                     name="welfare_type[]"
-                                     value="{{ $key }}"
-                                     @checked(in_array($key, $welfare_type))
-                                     onchange="ensureReceived()">
+          <button type="button"
+                  class="btn btn-sm {{ $welfare==='received' ? 'btn-success' : 'btn-outline-success' }}"
+                  onclick="setWelfare('received', true)">
+            ได้รับสวัสดิการ
+          </button>
 
-                              <span class="badge rounded-pill w-100 text-start d-block text-truncate
-                                {{ in_array($key,$welfare_type) ? 'bg-success-subtle text-success' : 'bg-light text-dark border' }}"
-                                style="padding:.6rem .75rem;" title="{{ $label }}">
-                                {{ $label }}
-                              </span>
-                            </label>
-                          </div>
-                        @endforeach
-                      </div>
+          <button type="button"
+                  class="btn btn-sm {{ $welfare==='not_received' ? 'btn-secondary' : 'btn-outline-secondary' }}"
+                  onclick="setWelfare('not_received', true)">
+            ไม่ได้รับสวัสดิการ
+          </button>
+        </div>
 
-                      @if($typeCount > 1)
-                        <div class="fw-semibold text-secondary mb-2">
-                          ขั้นตอนที่ 3 : เงื่อนไขการแสดงผล
-                        </div>
+        {{-- ✅ ซ่อน/โชว์ ขั้นตอนที่ 2-3 ด้วย wrapper --}}
+        <div id="welfareTypeSection">
 
-                        <div class="vstack gap-2 mb-3 small">
-                          <label class="border rounded-3 p-2 d-flex gap-2">
-                            <input type="radio" class="form-check-input mt-1"
-                                   name="welfare_match_ui"
-                                   value="any"
-                                   @checked($welfare_match==='any')
-                                   onclick="setMatch('any')">
-                            <div>ได้รับ <strong>อย่างน้อย 1 ประเภท</strong></div>
-                          </label>
+          <div class="fw-semibold text-secondary mb-2">
+            ขั้นตอนที่ 2 : เลือกประเภทสวัสดิการ
+          </div>
 
-                          <label class="border rounded-3 p-2 d-flex gap-2">
-                            <input type="radio" class="form-check-input mt-1"
-                                   name="welfare_match_ui"
-                                   value="all"
-                                   @checked($welfare_match==='all')
-                                   onclick="setMatch('all')">
-                            <div>ได้รับ <strong>ครบทุกประเภท</strong></div>
-                          </label>
-                        </div>
-                      @endif
+          <div class="row g-2 mb-3">
+            @foreach($types as $key=>$label)
+              <div class="col-6">
+                <label class="form-check w-100">
+                  <input class="form-check-input"
+                  type="checkbox"
+                         name="welfare_type[]"
+                         value="{{ $key }}"
+                         @checked(in_array($key, $welfare_type))
+                         onchange="handleUnknownToggle(this); ensureReceived()">
 
-                    </div>
+                  <span class="badge rounded-pill w-100 text-start d-block text-truncate
+                    {{ in_array($key,$welfare_type) ? 'bg-success-subtle text-success' : 'bg-light text-dark border' }}"
+                    style="padding:.6rem .75rem;" title="{{ $label }}">
+                    {{ $label }}
+                  </span>
+                </label>
+              </div>
+            @endforeach
+          </div>
 
-                    <div class="d-flex gap-2 pt-2 border-top">
-                      <button type="button"
-                              class="btn btn-sm btn-outline-secondary w-100"
-                              onclick="clearWelfareTypes()">
-                        ล้างการเลือก
-                      </button>
-                      <button type="submit"
-                              class="btn btn-sm btn-success w-100">
-                        แสดงผลข้อมูล
-                      </button>
-                    </div>
+          @if($typeCount > 1)
+            <div class="fw-semibold text-secondary mb-2">
+              ขั้นตอนที่ 3 : เงื่อนไขการแสดงผล
+            </div>
 
-                  </div>
-                </div>
-              </th>
+            <div class="vstack gap-2 mb-3 small">
+              <label class="border rounded-3 p-2 d-flex gap-2">
+                <input type="radio" class="form-check-input mt-1"
+                       name="welfare_match_ui"
+                       value="any"
+                       @checked($welfare_match==='any')
+                       onclick="setMatch('any')">
+                <div>ได้รับ <strong>อย่างน้อย 1 ประเภท</strong></div>
+              </label>
 
+              <label class="border rounded-3 p-2 d-flex gap-2">
+                <input type="radio" class="form-check-input mt-1"
+                       name="welfare_match_ui"
+                       value="all"
+                       @checked($welfare_match==='all')
+                       onclick="setMatch('all')">
+                <div>ได้รับ <strong>ครบทุกประเภท</strong></div>
+              </label>
+            </div>
+          @endif
+
+        </div> {{-- /#welfareTypeSection --}}
+
+      </div>
+
+      <div class="d-flex gap-2 pt-2 border-top">
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary w-100"
+                onclick="clearWelfareTypes()">
+          ล้างการเลือก
+        </button>
+        <button type="submit"
+                class="btn btn-sm btn-success w-100">
+          แสดงผลข้อมูล
+        </button>
+      </div>
+
+    </div>
+  </div>
+</th>
+
+                          
               {{-- ✅ FIX: ช่อง filter ของ "ประเภทสวัสดิการ" --}}
               <th></th>
 
@@ -472,17 +483,25 @@
                 $isYes = fn($v) => trim((string)$v) === 'ได้รับ';
 
                 $receivedList = [];
-                if(!$isNotReceivedRow){
-                  $selectedCols = array_values(array_intersect($welfare_type, array_keys($wMap)));
-                  $showCols = !empty($selectedCols) ? $selectedCols : array_keys($wMap);
+                    $hasAnyYes = false;
 
-                  foreach($showCols as $col){
-                    $label = $wMap[$col] ?? $col;
-                    if(isset($r->$col) && $isYes($r->$col)){
-                      $receivedList[] = $label;
+                    if(!$isNotReceivedRow){
+                      $selectedCols = array_values(array_intersect($welfare_type, array_keys($wMap)));
+                      $showCols = !empty($selectedCols) ? $selectedCols : array_keys($wMap);
+
+                      foreach($showCols as $col){
+                        if(isset($r->$col) && $isYes($r->$col)){
+                          $hasAnyYes = true;
+                          $receivedList[] = $wMap[$col] ?? $col;
+                        }
+                      }
+
+                      // ✅ ไม่มีสวัสดิการใดเป็น "ได้รับ" เลย
+                      if(!$hasAnyYes){
+                        $receivedList = ['ไม่ระบุ'];
+                      }
                     }
-                  }
-                }
+
               @endphp
 
               <tr
@@ -732,11 +751,7 @@
                         <div class="fw-semibold font-monospace" id="m_phone"></div>
                       </div>
 
-                      <a id="m_call"
-                         class="btn btn-sm btn-success rounded-pill px-3 d-none"
-                         target="_self">
-                        <i class="bi bi-telephone-fill"></i> โทร
-                      </a>
+                      
                     </div>
                   </div>
 
@@ -810,7 +825,48 @@
       });
     });
   }
-  document.addEventListener('DOMContentLoaded', initDropdownFixed);
+function handleUnknownToggle(changed){
+  const unknown = document.querySelector('input[name="welfare_type[]"][value="unknown"]');
+  if(!unknown) return;
+
+  const others = Array.from(document.querySelectorAll('input[name="welfare_type[]"]'))
+    .filter(x => x.value !== 'unknown');
+
+  // ถ้าเพิ่งติ๊ก "ไม่ระบุ" -> ปิดตัวอื่น + บังคับ match = any
+  if(changed === unknown && unknown.checked){
+    others.forEach(x => x.checked = false);
+    setMatch('any');
+    ensureReceived();
+    return;
+  }
+
+  // ถ้าติ๊กตัวอื่น -> ปิด "ไม่ระบุ"
+  if(changed !== unknown && changed?.checked){
+    unknown.checked = false;
+  }
+}
+
+  // ✅ ซ่อน/โชว์ ขั้นตอนที่ 2-3
+  function toggleWelfareTypeSection(){
+    const welfare = document.getElementById('welfareHidden')?.value || '';
+    const sec = document.getElementById('welfareTypeSection');
+    if(!sec) return;
+
+    if (welfare === 'not_received') {
+      sec.classList.add('d-none');
+
+      // ล้างประเภท + match เพื่อไม่ให้ค้าง
+      clearWelfareTypes();
+      setMatch('any');
+    } else {
+      sec.classList.remove('d-none');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initDropdownFixed();
+    toggleWelfareTypeSection(); // ✅ ให้ซ่อนถูกตั้งแต่โหลดหน้า
+  });
 
   function setMatch(val){
     const m = document.getElementById('welfareMatchHidden');
@@ -826,6 +882,8 @@
       setMatch('any');
     }
 
+    toggleWelfareTypeSection(); // ✅ เพิ่ม
+
     if(autoSubmit){
       document.getElementById('filterForm').submit();
     }
@@ -837,11 +895,14 @@
 
     const m = document.getElementById('welfareMatchHidden');
     if(m && !m.value) m.value = 'any';
+
+    toggleWelfareTypeSection(); // ✅ เพิ่ม (ถ้าติ๊กประเภท ให้แน่ใจว่า step2-3 โชว์)
   }
 
   function clearWelfareTypes(){
-    document.querySelectorAll('input[name="welfare_type[]"]').forEach(cb => cb.checked = false);
-  }
+  document.querySelectorAll('input[name="welfare_type[]"]').forEach(cb => cb.checked = false);
+}
+
 
   // ✅ เติมข้อมูลเข้า modal
   function openDetail(tr){
@@ -870,17 +931,7 @@
     document.getElementById('m_cid').textContent   = get('cid') || '-';
     document.getElementById('m_phone').textContent = get('phone') || '-';
 
-    // ปุ่มโทร
-    const phone = (get('phone') || '').replace(/\D/g,'');
-    const callBtn = document.getElementById('m_call');
-    if(callBtn){
-      if(phone){
-        callBtn.href = `tel:${phone}`;
-        callBtn.classList.remove('d-none');
-      }else{
-        callBtn.classList.add('d-none');
-      }
-    }
+  
 
     // สวัสดิการ (badge)
     const welfareEl = document.getElementById('m_welfare');

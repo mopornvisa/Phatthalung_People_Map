@@ -41,7 +41,7 @@
 
 <body class="m-0"
   style="min-height:100vh;background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%);">
-
+@include('layouts.topbar')
 @php
   $teal  = '#0B7F6F';
   $teal2 = '#0B5B6B';
@@ -292,7 +292,7 @@
               <th>
                 <select class="form-select form-select-sm" name="survey_year">
                   <option value="">ปีที่สำรวจ (ทั้งหมด)</option>
-                  @foreach([2564,2565,2566,2567,2568,2569] as $y)
+                  @foreach([2564,2565,2566,2567,2568] as $y)
                     <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
                   @endforeach
                 </select>
@@ -601,10 +601,10 @@
   </div>
 </div>
 
-{{-- =========================
+ {{-- =========================
      MODAL
-========================= --}}
-<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+ ========================= --}}
+ <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content rounded-4 shadow">
 
@@ -805,9 +805,9 @@
 
     </div>
   </div>
-</div>
+ </div>
 
-<script>
+ <script>
   // ✅ ทำให้ dropdown ใน table-responsive ไม่โดน overflow ตัด
   function initDropdownFixed() {
     document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach((el) => {
@@ -825,7 +825,7 @@
       });
     });
   }
-function handleUnknownToggle(changed){
+ function handleUnknownToggle(changed){
   const unknown = document.querySelector('input[name="welfare_type[]"][value="unknown"]');
   if(!unknown) return;
 
@@ -844,7 +844,7 @@ function handleUnknownToggle(changed){
   if(changed !== unknown && changed?.checked){
     unknown.checked = false;
   }
-}
+ }
 
   // ✅ ซ่อน/โชว์ ขั้นตอนที่ 2-3
   function toggleWelfareTypeSection(){
@@ -901,7 +901,7 @@ function handleUnknownToggle(changed){
 
   function clearWelfareTypes(){
   document.querySelectorAll('input[name="welfare_type[]"]').forEach(cb => cb.checked = false);
-}
+ }
 
 
   // ✅ เติมข้อมูลเข้า modal
@@ -970,7 +970,7 @@ function handleUnknownToggle(changed){
       if(mapLink) mapLink.classList.add('d-none');
     }
   }
-</script>
+ </script>
 
 </body>
 </html>

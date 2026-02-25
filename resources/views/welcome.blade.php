@@ -1,3 +1,4 @@
+{{-- resources/views/welcome.blade.php --}}
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -9,11 +10,13 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
     body{ font-family:'Prompt',system-ui,sans-serif; }
     .app-bg{ background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%); min-height:100vh; }
     .shadow-soft{ box-shadow: 0 12px 28px rgba(2, 6, 23, .08) !important; }
+
     .sidebar{
       width: 280px;
       position: sticky;
@@ -21,19 +24,41 @@
       height: calc(100vh - 90px);
       overflow: auto;
     }
+
     .nav-pills .nav-link.active{ background:#0B7F6F !important; }
     .nav-pills .nav-link{ border-radius: 14px; padding:10px 12px; }
+
     .kpi-icon{
       width:46px;height:46px;
       display:flex;align-items:center;justify-content:center;
       border-radius:16px;
     }
+
+    .chip{
+      border-radius:999px;
+      padding:.35rem .7rem;
+      font-size:.85rem;
+      display:inline-flex;
+      align-items:center;
+      gap:.4rem;
+      border:1px solid rgba(0,0,0,.08);
+      background:#fff;
+    }
+
+    .dropdown-menu-scrollable{ max-height: 260px; overflow:auto; }
   </style>
 </head>
 
+<body class="app-bg">
 @php
   $teal  = '#0B7F6F';
   $teal2 = '#0B5B6B';
+
+  // ✅ ปี (กรอง)
+  $year = $year ?? request('year', 'all');
+  $YEAR_OPTIONS = $YEAR_OPTIONS ?? ['all','2564','2565','2566','2567','2568'];
+  if (!in_array($year, $YEAR_OPTIONS, true)) $year = 'all';
+  $yearLabel = ($year === 'all') ? '2564–2568' : $year;
 
   $view = $view ?? request('view', 'district');
 
@@ -58,6 +83,7 @@
     '98+'   => '98 ปีขึ้นไป',
   ];
 
+  // ✅ ต้องส่งมาจาก controller เป็น list ของตำบลตามอำเภอ
   $subdistrictList = $subdistrictList ?? collect([]);
 
   $totalHouseholds = $totalHouseholds ?? 0;
@@ -69,492 +95,732 @@
 
   $labels   = $labels ?? [];
   $datasets = $datasets ?? [];
-  $labelDistrictMap = $labelDistrictMap ?? [];
+
+  // ✅ ตัวเลขเพศ
+  $sexCounts = $sexCounts ?? ['ชาย'=>0,'หญิง'=>0];
+
+  // ✅ baseParams ใช้ให้ทุกลิงก์ติด query เหมือนกัน
+  $baseParams = [
+    'year'        => $year,
+    'district'    => $district,
+    'subdistrict' => $subdistrict,
+    'human_Sex'   => $human_Sex,
+    'age_range'   => $age_range,
+    'view'        => $view,
+  ];
+
+  $makeUrl = function(string $path) use ($baseParams) {
+    $u = url($path);
+    $q = http_build_query(array_filter($baseParams, fn($v)=>$v!=='' && $v!==null));
+    return $q ? ($u.'?'.$q) : $u;
+  };
+
+  $hhHref      = $makeUrl('/household_64');
+  $testHref    = $makeUrl('/test');
+  $welfareHref = $makeUrl('/welfare');
+
+  // =========================
+  // ✅ Capitals (ทุน 5 ด้าน)
+  // =========================
+  $capYear = (int)($capYear ?? request('cap_year', 2568));
+
+  $capSummary = $capSummary ?? ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
+  $capStd     = $capStd     ?? ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
+
+  $capRadar    = $capRadar    ?? [
+    (float)($capSummary['human']??0),
+    (float)($capSummary['physical']??0),
+    (float)($capSummary['financial']??0),
+    (float)($capSummary['natural']??0),
+    (float)($capSummary['social']??0)
+  ];
+  $capRadarStd = $capRadarStd ?? [
+    (float)($capStd['human']??0),
+    (float)($capStd['physical']??0),
+    (float)($capStd['financial']??0),
+    (float)($capStd['natural']??0),
+    (float)($capStd['social']??0)
+  ];
+
+  // ✅ SAFE vars
+  $sexCountsSafe   = $sexCounts   ?? ['ชาย'=>0,'หญิง'=>0];
+  $capRadarSafe    = $capRadar    ?? [0,0,0,0,0];
+  $capRadarStdSafe = $capRadarStd ?? [0,0,0,0,0];
+
+  // =========================
+  // ✅ Total Capitals by Year (ทุนรวม 5 ด้านรายปี)
+  // =========================
+  $CAP_YEARS = [2564,2565,2566,2567,2568];
+
+  // ✅ controller "ควรส่งมา" แบบนี้: [ปี => ['human'=>..,'physical'=>..,'financial'=>..,'natural'=>..,'social'=>..]]
+  $capByYear = $capByYear ?? [];
+
+  $capTotalByYear = [];
+  foreach ($CAP_YEARS as $y) {
+    $row = $capByYear[$y] ?? ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
+
+    $capTotalByYear[$y] =
+      (float)($row['human']??0) +
+      (float)($row['physical']??0) +
+      (float)($row['financial']??0) +
+      (float)($row['natural']??0) +
+      (float)($row['social']??0);
+  }
+
+  $capYearsLabels  = array_map(fn($y)=> (string)$y, $CAP_YEARS);
+  $capTotalsSeries = array_values($capTotalByYear);
 @endphp
 
-<body class="app-bg">
+@include('layouts.topbar')
 
-  {{-- Topbar --}}
-  <nav class="navbar navbar-expand-lg bg-white bg-opacity-75 border-bottom sticky-top"
-       style="backdrop-filter: blur(8px);">
-    <div class="container-fluid px-3 px-lg-4">
+<div class="container-fluid px-3 px-lg-4 py-3">
+  <div class="row g-3">
 
-      <button class="btn btn-outline-success d-lg-none me-2"
-              type="button"
-              data-bs-toggle="offcanvas"
-              data-bs-target="#mobileSidebar">
-        <i class="bi bi-list"></i>
-      </button>
+    {{-- Sidebar (desktop) --}}
+    <div class="col-lg-3 d-none d-lg-block">
+      <div class="bg-white bg-opacity-75 border rounded-4 p-3 sidebar shadow-soft">
 
-      <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
-        <img src="{{ asset('images/phatthalung-logo.png') }}" alt="logo"
-             class="rounded-3 border"
-             style="width:38px;height:38px;object-fit:cover;">
-        <div class="lh-sm">
-          <div class="fw-bold" style="color:{{ $teal2 }}">Phatthalung People Map</div>
-          <div class="text-muted small" style="font-size:.75rem;">ระบบฐานข้อมูลพัทลุงโมเดล</div>
-        </div>
-      </a>
-
-      <div class="ms-auto d-flex align-items-center gap-2 flex-wrap justify-content-end">
-
-        <span class="badge rounded-pill text-bg-light border">
-          <i class="bi bi-calendar-event me-1"></i> ปี 2564
-        </span>
-
-        @if($district)
-          <span class="badge rounded-pill text-bg-light border">
-            <i class="bi bi-geo-alt-fill me-1 text-success"></i> อ.{{ $district }}
-          </span>
-        @endif
-        @if($subdistrict)
-          <span class="badge rounded-pill text-bg-light border">
-            <i class="bi bi-pin-map-fill me-1 text-success"></i> ต.{{ $subdistrict }}
-          </span>
-        @endif
-        @if($human_Sex)
-          <span class="badge rounded-pill text-bg-light border">
-            <i class="bi bi-gender-ambiguous me-1 text-success"></i> เพศ: {{ $human_Sex }}
-          </span>
-        @endif
-        @if($age_range)
-          <span class="badge rounded-pill text-bg-light border">
-            <i class="bi bi-hourglass-split me-1 text-success"></i> {{ $AGE_RANGES[$age_range] ?? $age_range }}
-          </span>
-        @endif
-
-        <div class="dropdown">
-          <button class="btn btn-success btn-sm dropdown-toggle rounded-pill px-3"
-                  style="background:{{ $teal }};border-color:{{ $teal }};"
-                  data-bs-toggle="dropdown">
-            <i class="bi bi-grid-1x2-fill me-1"></i> เมนู
-          </button>
-
-          <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
-            <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
-            <li><a class="dropdown-item" href="{{ url('/test') }}"><i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ</a></li>
-            <li><a class="dropdown-item" href="{{ url('/welfare') }}"><i class="bi bi-gift-fill me-2"></i>ข้อมูลสวัสดิการ</a></li>
-            <li><a class="dropdown-item" href="{{ route('household_64') }}"><i class="bi bi-table me-2"></i>ตารางครัวเรือน 2564</a></li>
-            <li><hr class="dropdown-divider"></li>
-
-            @if(session('user_firstname'))
-              <li>
-                <span class="dropdown-item-text small text-muted">
-                  <i class="bi bi-person-circle me-2"></i>{{ session('user_firstname') }}
-                </span>
-              </li>
-              <li><a class="dropdown-item text-danger" href="{{ url('/logout') }}"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</a></li>
-            @else
-              <li><a class="dropdown-item" href="{{ url('/login') }}"><i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ</a></li>
-              <li><a class="dropdown-item" href="{{ url('/register') }}"><i class="bi bi-person-plus me-2"></i>ลงทะเบียน</a></li>
-            @endif
-          </ul>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="kpi-icon" style="background:rgba(11,127,111,.12);color:{{ $teal }};">
+            <i class="bi bi-grid-1x2-fill"></i>
+          </div>
+          <div>
+            <div class="fw-bold" style="color:{{ $teal2 }}">เมนูระบบ</div>
+            <div class="text-muted small">ปีข้อมูล: {{ $yearLabel }}</div>
+          </div>
         </div>
 
-      </div>
-    </div>
-  </nav>
+        <div class="nav nav-pills flex-column gap-1 mb-3">
+          <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : 'text-dark' }}"
+             href="{{ route('dashboard', array_filter($baseParams)) }}">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          </a>
 
-  {{-- Layout --}}
-  <div class="container-fluid px-3 px-lg-4 py-3">
-    <div class="row g-3">
+          <a class="nav-link {{ request()->is('test') ? 'active' : 'text-dark' }}"
+             href="{{ $testHref }}">
+            <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
+          </a>
 
-      {{-- Sidebar (desktop) --}}
-      <div class="col-lg-3 d-none d-lg-block">
-        <div class="bg-white bg-opacity-75 border rounded-4 p-3 sidebar shadow-soft">
+          <a class="nav-link {{ request()->is('welfare') ? 'active' : 'text-dark' }}"
+             href="{{ $welfareHref }}">
+            <i class="bi bi-gift-fill me-2"></i>ข้อมูลสวัสดิการ
+          </a>
 
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <div class="kpi-icon" style="background:rgba(11,127,111,.12);color:{{ $teal }};">
-              <i class="bi bi-grid-1x2-fill"></i>
-            </div>
-            <div>
-              <div class="fw-bold" style="color:{{ $teal2 }}">เมนูระบบ</div>
-              <div class="text-muted small">ปีข้อมูล: 2564</div>
-            </div>
+          <a class="nav-link {{ request()->is('household_64') ? 'active' : 'text-dark' }}"
+             href="{{ $hhHref }}">
+            <i class="bi bi-table me-2"></i>ตารางครัวเรือน
+          </a>
+
+          <a class="nav-link d-flex align-items-center text-nowrap {{ request()->routeIs('housing.dashboard') ? 'active' : 'text-dark' }}"
+             href="{{ route('housing.dashboard') }}">
+            <i class="bi bi-house-door-fill me-2"></i>
+            สภาพที่อยู่อาศัยสาธารณูปโภค
+          </a>
+
+          @if(!session('user_firstname'))
+            <a class="nav-link text-dark" href="{{ url('/login') }}">
+              <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
+            </a>
+            <a class="nav-link text-dark" href="{{ url('/register') }}">
+              <i class="bi bi-person-plus me-2"></i>ลงทะเบียน
+            </a>
+          @else
+            <a class="nav-link text-danger" href="{{ url('/logout') }}">
+              <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+            </a>
+          @endif
+        </div>
+
+        {{-- Filters --}}
+        <div class="border-top pt-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="text-muted small">ตัวกรองข้อมูล</div>
+            <span class="badge rounded-pill text-bg-light border">
+              <i class="bi bi-funnel-fill me-1 text-success"></i> Filters
+            </span>
           </div>
 
-          <div class="nav nav-pills flex-column gap-1 mb-3">
-            <a class="nav-link {{ request()->is('dashboard') ? 'active' : 'text-dark' }}" href="{{ route('dashboard') }}">
-              <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </a>
-            <a class="nav-link {{ request()->is('test') ? 'active' : 'text-dark' }}" href="{{ url('/test') }}">
-              <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
-            </a>
-            <a class="nav-link {{ request()->is('welfare') ? 'active' : 'text-dark' }}" href="{{ url('/welfare') }}">
-              <i class="bi bi-gift-fill me-2"></i>ข้อมูลสวัสดิการ
-            </a>
-            <a class="nav-link text-dark" href="{{ route('household_64') }}">
-              <i class="bi bi-table me-2"></i>ตารางครัวเรือน 2564
-            </a>
-
-            @if(!session('user_firstname'))
-              <a class="nav-link text-dark" href="{{ url('/login') }}">
-                <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
-              </a>
-              <a class="nav-link text-dark" href="{{ url('/register') }}">
-                <i class="bi bi-person-plus me-2"></i>ลงทะเบียน
-              </a>
-            @else
-              <a class="nav-link text-danger" href="{{ url('/logout') }}">
-                <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
-              </a>
-            @endif
-          </div>
-
-          {{-- Filters --}}
-          <div class="border-top pt-3">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="text-muted small">ตัวกรองข้อมูล</div>
-              <span class="badge rounded-pill text-bg-light border">
-                <i class="bi bi-funnel-fill me-1 text-success"></i> Filters
+          {{-- District --}}
+          <div class="dropdown mb-2">
+            <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
+                    style="background:{{ $teal }};border-color:{{ $teal }};"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside">
+              <span class="text-truncate">
+                <i class="bi bi-geo-alt-fill me-1"></i>{{ $district ? "อ.$district" : "เลือกอำเภอ" }}
               </span>
-            </div>
+              <i class="bi bi-chevron-down"></i>
+            </button>
 
-            {{-- District dropdown --}}
-            <div class="dropdown mb-2">
-              <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
-                      style="background:{{ $teal }};border-color:{{ $teal }};"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="outside">
-                <span class="text-truncate">
-                  <i class="bi bi-geo-alt-fill me-1"></i>{{ $district ? "อ.$district" : "เลือกอำเภอ" }}
-                </span>
-                <i class="bi bi-chevron-down"></i>
-              </button>
+            <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
+              @foreach($districtList as $d)
+                <li>
+                  <a class="dropdown-item rounded-3 py-2"
+                     href="{{ route('dashboard', array_filter(array_merge($baseParams, [
+                        'district'    => $d,
+                        'subdistrict' => '',
+                     ]))) }}">
+                    <i class="bi bi-dot me-1"></i>อ.{{ $d }}
+                  </a>
+                </li>
+              @endforeach
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger rounded-3 py-2"
+                   href="{{ route('dashboard', array_filter(array_merge($baseParams, [
+                      'district'    => '',
+                      'subdistrict' => '',
+                   ]))) }}">
+                  <i class="bi bi-x-circle me-1"></i>ล้างตัวกรองอำเภอ
+                </a>
+              </li>
+            </ul>
+          </div>
 
-              <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
-                @foreach($districtList as $d)
-                  <li>
-                    <a class="dropdown-item rounded-3 py-2"
-                       href="{{ route('dashboard', array_filter([
-                          'district'    => $d,
-                          'subdistrict' => '',
-                          'human_Sex'   => $human_Sex,
-                          'age_range'   => $age_range,
-                          'view'        => $view
-                       ])) }}">
-                      <i class="bi bi-dot me-1"></i>อ.{{ $d }}
-                    </a>
-                  </li>
-                @endforeach
-                <li><hr class="dropdown-divider"></li>
+          {{-- Subdistrict --}}
+          <div class="dropdown mb-2">
+            <button class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-between rounded-4"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                    @if(empty($district)) disabled @endif>
+              <span class="text-truncate">
+                <i class="bi bi-pin-map-fill me-1"></i>{{ $subdistrict ? "ต.$subdistrict" : "เลือกตำบล" }}
+              </span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+
+            <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
+              @if(empty($district))
+                <li class="dropdown-item text-muted">กรุณาเลือกอำเภอก่อน</li>
+              @else
                 <li>
                   <a class="dropdown-item text-danger rounded-3 py-2"
-                     href="{{ route('dashboard', array_filter([
-                        'subdistrict' => '',
-                        'human_Sex'   => $human_Sex,
-                        'age_range'   => $age_range,
-                        'view'        => $view
-                     ])) }}">
-                    <i class="bi bi-x-circle me-1"></i>ล้างตัวกรองอำเภอ
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {{-- Sex dropdown --}}
-            <div class="dropdown mb-2">
-              <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
-                      style="background:{{ $teal }};border-color:{{ $teal }};"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="outside">
-                <span class="text-truncate">
-                  <i class="bi bi-gender-ambiguous me-1"></i>{{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
-                </span>
-                <i class="bi bi-chevron-down"></i>
-              </button>
-
-              <ul class="dropdown-menu w-100 shadow border-0 rounded-4 p-2">
-                <li>
-                  <a class="dropdown-item rounded-3 py-2"
-                     href="{{ route('dashboard', array_filter([
-                        'district'    => $district,
-                        'subdistrict' => $subdistrict,
-                        'human_Sex'   => '',
-                        'age_range'   => $age_range,
-                        'view'        => $view
-                     ])) }}">
-                    ทั้งหมด
+                     href="{{ route('dashboard', array_filter(array_merge($baseParams, ['subdistrict'=>'']))) }}">
+                    <i class="bi bi-x-circle me-1"></i>ล้างตัวกรองตำบล
                   </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <li>
-                  <a class="dropdown-item rounded-3 py-2"
-                     href="{{ route('dashboard', array_filter([
-                        'district'    => $district,
-                        'subdistrict' => $subdistrict,
-                        'human_Sex'   => 'ชาย',
-                        'age_range'   => $age_range,
-                        'view'        => $view
-                     ])) }}">
-                    ชาย
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item rounded-3 py-2"
-                     href="{{ route('dashboard', array_filter([
-                        'district'    => $district,
-                        'subdistrict' => $subdistrict,
-                        'human_Sex'   => 'หญิง',
-                        'age_range'   => $age_range,
-                        'view'        => $view
-                     ])) }}">
-                    หญิง
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {{-- Age dropdown (sidebar) --}}
-            <div class="dropdown mb-2">
-              <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
-                      style="background:{{ $teal }};border-color:{{ $teal }};"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="outside">
-                <span class="text-truncate">
-                  <i class="bi bi-hourglass-split me-1"></i>{{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
-                </span>
-                <i class="bi bi-chevron-down"></i>
-              </button>
-
-              <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
-                @foreach($AGE_RANGES as $key => $label)
+                @foreach($subdistrictList as $sd)
                   <li>
-                    <a class="dropdown-item rounded-3 py-2 {{ $age_range===$key ? 'active fw-semibold' : '' }}"
-                       href="{{ route('dashboard', array_filter([
-                          'district'    => $district,
-                          'subdistrict' => $subdistrict,
-                          'human_Sex'   => $human_Sex,
-                          'age_range'   => $key,
-                          'view'        => $view
-                       ])) }}">
-                      <i class="bi bi-dot me-1"></i>{{ $label }}
+                    <a class="dropdown-item rounded-3 py-2 {{ $subdistrict===$sd ? 'active fw-semibold' : '' }}"
+                       href="{{ route('dashboard', array_filter(array_merge($baseParams, ['subdistrict'=>$sd]))) }}">
+                      <i class="bi bi-dot me-1"></i>ต.{{ $sd }}
                     </a>
                   </li>
                 @endforeach
-              </ul>
-            </div>
+              @endif
+            </ul>
+          </div>
 
-            {{-- Subdistrict dropdown --}}
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-between rounded-4"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="outside"
-                      @if(empty($district)) disabled @endif>
-                <span class="text-truncate">
-                  <i class="bi bi-pin-map-fill me-1"></i>{{ $subdistrict ? "ต.$subdistrict" : "เลือกตำบล" }}
-                </span>
-                <i class="bi bi-chevron-down"></i>
-              </button>
+          {{-- Sex --}}
+          <div class="dropdown mb-2">
+            <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
+                    style="background:{{ $teal }};border-color:{{ $teal }};"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside">
+              <span class="text-truncate">
+                <i class="bi bi-gender-ambiguous me-1"></i>{{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
+              </span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
 
-              <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
-                @if(empty($district))
-                  <li class="dropdown-item text-muted">กรุณาเลือกอำเภอก่อน</li>
-                @else
-                  <li>
-                    <a class="dropdown-item text-danger rounded-3 py-2"
-                       href="{{ route('dashboard', array_filter([
-                          'district'    => $district,
-                          'subdistrict' => '',
-                          'human_Sex'   => $human_Sex,
-                          'age_range'   => $age_range,
-                          'view'        => $view
-                       ])) }}">
-                      <i class="bi bi-x-circle me-1"></i>ล้างตัวกรองตำบล
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider"></li>
-                  @foreach($subdistrictList as $sd)
+            <ul class="dropdown-menu w-100 shadow border-0 rounded-4 p-2">
+              <li>
+                <a class="dropdown-item rounded-3 py-2"
+                   href="{{ route('dashboard', array_filter(array_merge($baseParams, ['human_Sex'=>'']))) }}">ทั้งหมด</a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item rounded-3 py-2"
+                   href="{{ route('dashboard', array_filter(array_merge($baseParams, ['human_Sex'=>'ชาย']))) }}">ชาย</a>
+              </li>
+              <li>
+                <a class="dropdown-item rounded-3 py-2"
+                   href="{{ route('dashboard', array_filter(array_merge($baseParams, ['human_Sex'=>'หญิง']))) }}">หญิง</a>
+              </li>
+            </ul>
+          </div>
+
+          {{-- Age --}}
+          <div class="dropdown mb-2">
+            <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
+                    style="background:{{ $teal }};border-color:{{ $teal }};"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside">
+              <span class="text-truncate">
+                <i class="bi bi-hourglass-split me-1"></i>{{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
+              </span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+
+            <ul class="dropdown-menu w-100 shadow border-0 rounded-4 dropdown-menu-scrollable p-2">
+              @foreach($AGE_RANGES as $key => $label)
+                <li>
+                  <a class="dropdown-item rounded-3 py-2 {{ $age_range===$key ? 'active fw-semibold' : '' }}"
+                     href="{{ route('dashboard', array_filter(array_merge($baseParams, ['age_range'=>$key]))) }}">
+                    <i class="bi bi-dot me-1"></i>{{ $label }}
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+
+          {{-- Active badges --}}
+          <div class="mt-3 d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill text-bg-light border">
+              <i class="bi bi-calendar2-week me-1 text-success"></i>ปี {{ $yearLabel }}
+            </span>
+            @if($district)
+              <span class="badge rounded-pill text-bg-light border"><i class="bi bi-geo-alt-fill me-1 text-success"></i>อ.{{ $district }}</span>
+            @endif
+            @if($subdistrict)
+              <span class="badge rounded-pill text-bg-light border"><i class="bi bi-pin-map-fill me-1 text-success"></i>ต.{{ $subdistrict }}</span>
+            @endif
+            <span class="badge rounded-pill text-bg-light border">
+              <i class="bi bi-gender-ambiguous me-1 text-success"></i>{{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
+            </span>
+            <span class="badge rounded-pill text-bg-light border">
+              <i class="bi bi-hourglass-split me-1 text-success"></i>{{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
+            </span>
+          </div>
+
+        </div>{{-- /filters --}}
+      </div>
+    </div>
+
+    {{-- Content --}}
+    <div class="col-lg-9">
+
+      {{-- Header --}}
+      <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+        <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
+              <span>Dashboard สรุปข้อมูลภาพรวม</span>
+
+              {{-- Year dropdown --}}
+              <div class="dropdown">
+                <button class="btn btn-sm d-flex align-items-center gap-2"
+                        data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                        style="background:rgba(11,127,111,.08);color:{{ $teal }};border:none;border-radius:8px;padding:4px 10px;font-weight:600;">
+                  <i class="bi bi-calendar2-week" style="font-size:13px;"></i>
+                  <span>ปี {{ $yearLabel }}</span>
+                  <i class="bi bi-chevron-down" style="font-size:11px;"></i>
+                </button>
+
+                <ul class="dropdown-menu p-2"
+                    style="border-radius:10px;border:1px solid #e5e7eb;box-shadow:0 12px 28px rgba(0,0,0,.08);min-width:170px;">
+                  @foreach($YEAR_OPTIONS as $y)
+                    @php $yLabel = ($y==='all') ? '2564–2568' : $y; @endphp
                     <li>
-                      <a class="dropdown-item rounded-3 py-2"
-                         href="{{ route('dashboard', array_filter([
-                            'district'    => $district,
-                            'subdistrict' => $sd,
-                            'human_Sex'   => $human_Sex,
-                            'age_range'   => $age_range,
-                            'view'        => $view
-                         ])) }}">
-                        <i class="bi bi-dot me-1"></i>ต.{{ $sd }}
+                      <a class="dropdown-item d-flex justify-content-between align-items-center"
+                         style="border-radius:8px;padding:7px 10px;font-weight:{{ $year===$y ? '600' : '500' }};
+                                color:{{ $year===$y ? $teal : '#374151' }};
+                                background:{{ $year===$y ? 'rgba(11,127,111,.08)' : 'transparent' }};"
+                         href="{{ route('dashboard', array_filter(array_merge($baseParams, ['year'=>$y,'subdistrict'=>'']))) }}">
+                        {{ $yLabel }}
+                        @if($year===$y) <i class="bi bi-check text-success"></i> @endif
                       </a>
                     </li>
                   @endforeach
-                @endif
-              </ul>
+                </ul>
+              </div>
             </div>
 
-            {{-- Active badges --}}
-            <div class="mt-3 d-flex flex-wrap gap-2">
-              @if($district)
-                <span class="badge rounded-pill text-bg-light border"><i class="bi bi-geo-alt-fill me-1 text-success"></i>อ.{{ $district }}</span>
-              @endif
-              @if($subdistrict)
-                <span class="badge rounded-pill text-bg-light border"><i class="bi bi-pin-map-fill me-1 text-success"></i>ต.{{ $subdistrict }}</span>
-              @endif
-              <span class="badge rounded-pill text-bg-light border">
-                <i class="bi bi-gender-ambiguous me-1 text-success"></i>{{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
-              </span>
-              <span class="badge rounded-pill text-bg-light border">
-                <i class="bi bi-hourglass-split me-1 text-success"></i>{{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
-              </span>
+            <div class="text-muted small">
+              ปี {{ $yearLabel }}
+              @if($district) · อ.{{ $district }} @endif
+              @if($subdistrict) · ต.{{ $subdistrict }} @endif
+              · {{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
+              · {{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
             </div>
-
           </div>
         </div>
       </div>
 
-      {{-- Content --}}
-      <div class="col-lg-9">
-
-        {{-- Page header --}}
-        <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
-          <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
-              <div class="h5 fw-bold mb-1" style="color:{{ $teal2 }}">
-                Dashboard สรุปข้อมูลภาพรวม
+      {{-- KPI cards --}}
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">จำนวนครัวเรือน</div>
+                <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($totalHouseholds) }}</div>
+                <div class="text-muted small">(ครัวเรือน)</div>
               </div>
-              <div class="text-muted small">
-                ปี 2564
-                @if($district) · อ.{{ $district }} @endif
-                @if($subdistrict) · ต.{{ $subdistrict }} @endif
-                · {{ $human_Sex ? "เพศ: $human_Sex" : "เพศ: ทั้งหมด" }}
-                · {{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
+              <div class="kpi-icon" style="background:rgba(11,127,111,.12);color:{{ $teal }};">
+                <i class="bi bi-house-door-fill"></i>
               </div>
-            </div>
-
-            <div class="d-flex gap-2 flex-wrap">
-              <a class="btn btn-outline-success rounded-pill" href="{{ url('/test') }}">
-                <i class="bi bi-heart-pulse-fill me-1"></i> ข้อมูลสุขภาพ
-              </a>
-              <a class="btn btn-outline-success rounded-pill" href="{{ url('/welfare') }}">
-                <i class="bi bi-gift-fill me-1"></i> ข้อมูลสวัสดิการ
-              </a>
             </div>
           </div>
         </div>
 
-        {{-- KPI cards --}}
-        <div class="row g-3 mb-3">
-          <div class="col-md-4">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-              <div class="card-body d-flex align-items-center justify-content-between">
-                <div>
-                  <div class="text-muted small">จำนวนครัวเรือน</div>
-                  <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($totalHouseholds) }}</div>
-                  <div class="text-muted small">(ครัวเรือน)</div>
-                </div>
-                <div class="kpi-icon" style="background:rgba(11,127,111,.12);color:{{ $teal }};">
-                  <i class="bi bi-house-door-fill"></i>
-                </div>
+        <div class="col-md-4">
+          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">จำนวนสมาชิก</div>
+                <div class="h4 fw-bold mb-0 text-warning-emphasis">{{ number_format($totalMembers) }}</div>
+                <div class="text-muted small">(คน)</div>
+              </div>
+              <div class="kpi-icon bg-warning-subtle text-warning-emphasis">
+                <i class="bi bi-people-fill"></i>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="col-md-4">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-              <div class="card-body d-flex align-items-center justify-content-between">
-                <div>
-                  <div class="text-muted small">จำนวนสมาชิก</div>
-                  <div class="h4 fw-bold mb-0 text-warning-emphasis">{{ number_format($totalMembers) }}</div>
-                  <div class="text-muted small">(คน)</div>
+        <div class="col-md-4">
+          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">สวัสดิการทั้งหมด</div>
+                <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($welfareTotal) }}</div>
+                <div class="text-muted small">
+                  ได้รับ {{ number_format($welfareReceived) }} · ไม่ได้รับ {{ number_format($welfareNotReceived) }}
                 </div>
-                <div class="kpi-icon bg-warning-subtle text-warning-emphasis">
-                  <i class="bi bi-people-fill"></i>
-                </div>
+              </div>
+              <div class="kpi-icon bg-success-subtle text-success">
+                <i class="bi bi-gift-fill"></i>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="col-md-4">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-              <div class="card-body d-flex align-items-center justify-content-between">
-                <div>
-                  <div class="text-muted small">สวัสดิการทั้งหมด</div>
-                  <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($welfareTotal) }}</div>
-                  <div class="text-muted small">
-                    ได้รับ {{ number_format($welfareReceived) }} · ไม่ได้รับ {{ number_format($welfareNotReceived) }}
+      {{-- CHARTS --}}
+      <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 overflow-hidden mb-3">
+        <div class="card-header bg-white bg-opacity-50 border-0 border-bottom py-3">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="fw-semibold" style="color:{{ $teal2 }}">
+              <i class="bi bi-graph-up-arrow me-2 text-success"></i>
+              สถิติสุขภาพและโครงสร้างประชากร
+            </div>
+            <span class="badge rounded-pill text-bg-light border">
+              รวม <b>{{ number_format($totalMembers ?? 0) }}</b> คน
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body p-3 p-lg-4">
+          <div class="row g-4 align-items-stretch">
+
+            {{-- LEFT : HEALTH BAR --}}
+            <div class="col-12 col-lg-8">
+              <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small fw-semibold" style="color:{{ $teal2 }}">
+                    <i class="bi bi-bar-chart-fill me-1 text-success"></i>กราฟสุขภาพสมาชิก
+                  </div>
+                  <div class="small text-muted">
+                    {{ $yearLabel }}
+                    @if($district) · อ.{{ $district }} @endif
+                    @if($subdistrict) · ต.{{ $subdistrict }} @endif
                   </div>
                 </div>
-                <div class="kpi-icon bg-success-subtle text-success">
-                  <i class="bi bi-gift-fill"></i>
+
+                <div style="height:380px;">
+                  <canvas id="healthChart"></canvas>
+                </div>
+
+                <div class="small text-muted mt-2">
+                  <i class="bi bi-info-circle me-1"></i>
+                  “ไม่ระบุ” คือจำนวนที่ไม่ได้อยู่ใน 4 สถานะหลัก
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {{-- Charts --}}
-        <div class="row g-3">
-
-          {{-- ✅ เพศ --}}
-          <div class="col-lg-4">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100 overflow-hidden">
-              <div class="card-header bg-white bg-opacity-50 border-0 border-bottom">
-                <div class="fw-semibold" style="color:{{ $teal2 }}">
-                  <i class="bi bi-gender-ambiguous me-1 text-success"></i> กราฟเพศสมาชิก
-                </div>
-              </div>
-
-              <div class="card-body">
-                <div class="d-flex justify-content-between small text-muted mb-2">
-                  <span>ชาย: <b class="text-dark">{{ number_format($sexCounts['ชาย'] ?? 0) }}</b></span>
-                  <span>หญิง: <b class="text-dark">{{ number_format($sexCounts['หญิง'] ?? 0) }}</b></span>
+            {{-- RIGHT : SEX DONUT --}}
+            <div class="col-12 col-lg-4">
+              <div class="border rounded-4 bg-white p-3 h-100 d-flex flex-column" style="border-color:rgba(0,0,0,.06)!important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small fw-semibold" style="color:{{ $teal2 }}">
+                    <i class="bi bi-gender-ambiguous me-1 text-success"></i>สัดส่วนเพศ
+                  </div>
+                  <span class="badge rounded-pill text-bg-light border">
+                    {{ number_format(($sexCounts['ชาย'] ?? 0)+($sexCounts['หญิง'] ?? 0)) }} คน
+                  </span>
                 </div>
 
-                <div class="border rounded-4 bg-white p-2">
-                  <div style="height:230px;">
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                  <div style="height:250px;width:250px;">
                     <canvas id="sexChart"></canvas>
                   </div>
                 </div>
+
+                <div class="d-flex justify-content-between small text-muted mt-2">
+                  <span>ชาย: <b>{{ number_format($sexCounts['ชาย'] ?? 0) }}</b></span>
+                  <span>หญิง: <b>{{ number_format($sexCounts['หญิง'] ?? 0) }}</b></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {{-- =========================
+          ✅ SECTION: ทุนทั้ง 5 ด้าน
+         ========================= --}}
+      <div class="mt-3">
+
+        <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+          <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
+                <span><i class="bi bi-diagram-3-fill me-2 text-success"></i>ทุนทั้ง 5 ด้าน</span>
+                <span class="chip">
+                  <i class="bi bi-calendar2-week" style="color:{{ $teal }}"></i> ปี {{ $capYear }}
+                </span>
+              </div>
+              <div class="text-muted small">
+                แสดงค่าเฉลี่ย (Mean) และส่วนเบี่ยงเบนมาตรฐาน (SD)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{-- KPI: 5 กล่องอยู่บรรทัดเดียวกัน (desktop) --}}
+        <div class="d-flex flex-nowrap justify-content-between gap-3 mb-3">
+          @foreach([
+            'human'     => 'ทุนมนุษย์',
+            'physical'  => 'ทุนกายภาพ',
+            'financial' => 'ทุนการเงิน',
+            'natural'   => 'ทุนธรรมชาติ',
+            'social'    => 'ทุนสังคม',
+          ] as $key=>$label)
+
+            <div class="flex-fill">
+              <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 text-center h-100">
+                <div class="card-body py-3">
+                  <div class="small text-muted mb-1">{{ $label }}</div>
+                  <div class="fw-bold fs-4" style="color:{{ $teal2 }};">
+                    {{ number_format($capSummary[$key] ?? 0, 2) }}
+                  </div>
+                  <div class="text-muted" style="font-size:13px;">
+                    SD: <b>{{ number_format($capStd[$key] ?? 0, 2) }}</b>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          @endforeach
+        </div>
+
+        {{-- ✅ ทุนรวม (5 ด้านรวมกัน) รายปี 2564–2568 --}}
+        <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+          <div class="card-body">
+
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <div class="fw-semibold" style="color:{{ $teal2 }}">
+                <i class="bi bi-graph-up me-1 text-success"></i> ทุนรวม (5 ด้านรวมกัน) รายปี
+              </div>
+
+              <span class="badge rounded-pill text-bg-light border">
+                ปีที่เลือก {{ $capYear }}:
+                <b>{{ number_format($capTotalByYear[$capYear] ?? 0, 2) }}</b>
+              </span>
+            </div>
+
+            <div class="text-muted small mb-3">
+              ทุนรวม = มนุษย์ + กายภาพ + การเงิน + ธรรมชาติ + สังคม (ค่าเฉลี่ยของปีนั้น)
+            </div>
+
+            <div class="row g-3 align-items-stretch">
+
+              {{-- กราฟแนวโน้ม --}}
+              <div class="col-12 col-lg-7">
+                <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="small fw-semibold" style="color:{{ $teal2 }}">
+                      <i class="bi bi-activity me-1 text-success"></i> แนวโน้มทุนรวม
+                    </div>
+                    <div class="small text-muted">2564–2568</div>
+                  </div>
+
+                  <div style="height:260px;">
+                    <canvas id="capTotalTrend"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              {{-- ตารางทุนรวมรายปี --}}
+              <div class="col-12 col-lg-5">
+                <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+                  <div class="small fw-semibold mb-2" style="color:{{ $teal2 }}">
+                    <i class="bi bi-table me-1 text-success"></i> สรุปทุนรวมรายปี
+                  </div>
+
+                  <div class="table-responsive" style="border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
+                    <table class="table mb-0 align-middle" style="font-size:14px;">
+                      <thead style="background:rgba(11,127,111,.06);">
+                        <tr class="text-muted" style="font-size:12.5px;">
+                          <th style="padding:10px 12px;">ปี</th>
+                          <th class="text-end" style="padding:10px 12px;">ทุนรวม</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @foreach($CAP_YEARS as $y)
+                          @php $v = (float)($capTotalByYear[$y] ?? 0); @endphp
+                          <tr style="border-top:1px solid rgba(0,0,0,.05); {{ (int)$y===(int)$capYear ? 'background:rgba(11,127,111,.05);' : '' }}">
+                            <td style="padding:10px 12px;" class="fw-semibold">
+                              {{ $y }}
+                              @if((int)$y === (int)$capYear)
+                                <span class="badge rounded-pill ms-2" style="background:rgba(11,127,111,.12); color:{{ $teal2 }};">ปีที่เลือก</span>
+                              @endif
+                            </td>
+                            <td class="text-end fw-bold" style="padding:10px 12px; color:{{ $teal2 }};">
+                              {{ number_format($v, 2) }}
+                            </td>
+                          </tr>
+                        @endforeach
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {{-- Radar + Table --}}
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+              <div class="card-body">
+                <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
+                  <i class="bi bi-pentagon-half me-1 text-success"></i> เรดาร์ทุน 5 ด้าน 
+                </div>
+                <div class="border rounded-4 bg-white p-2" style="border-color:rgba(0,0,0,.06)!important;">
+                  <div style="height:320px;">
+                    <canvas id="capitalsRadar"></canvas>
+                  </div>
+                </div>
+                <div class="small text-muted mt-2">
+                  <i class="bi bi-info-circle me-1"></i> เส้นประกอบ: Mean, Mean+SD, Mean-SD
+                </div>
               </div>
             </div>
           </div>
 
-         {{-- ✅ สุขภาพ (สวยขึ้น/อ่านง่าย/ดูเป็นทางการ) --}}
-<div class="col-lg-8">
-  <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 overflow-hidden">
+          <div class="col-lg-6">
+  <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+    <div class="card-body">
 
-    <div class="card-header bg-white bg-opacity-50 border-0 border-bottom py-3">
-      <div class="d-flex align-items-center justify-content-between gap-2">
-        <div class="fw-semibold text-truncate" style="color:{{ $teal2 }}">
-          <i class="bi bi-bar-chart-fill me-2 text-success"></i> กราฟสุขภาพสมาชิก
-        </div>
-
-        {{-- optional: badge รวม --}}
-        <span class="badge rounded-pill text-bg-light border">
-          รวม <b>{{ number_format($totalMembers ?? 0) }}</b> คน
-        </span>
+      {{-- Header --}}
+      <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
+        <i class="bi bi-table me-1 text-success"></i> ตารางสรุป (Average / SD)
       </div>
+
+      <div class="text-muted small mb-3">
+        ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของทุนแต่ละมิติ
+      </div>
+    <span class="badge rounded-pill text-bg-light border">
+                ปีที่เลือก {{ $capYear }}
+             
+              </span>
+      <div class="table-responsive"
+           style="border-radius:16px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
+
+        <table class="table align-middle mb-0 text-center"
+               style="font-size:14px; table-layout:fixed;">
+
+          {{-- header --}}
+          <thead style="background:rgba(11,127,111,.06);">
+            <tr class="text-muted" style="font-size:12.5px;">
+              <th style="width:50%; padding:12px;">ทุน 5 ด้าน</th>
+              <th style="width:25%; padding:12px;">Mean</th>
+              <th style="width:25%; padding:12px;">SD</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+          @php
+            $rowsCap = [
+              ['k'=>'human','name'=>'มนุษย์','icon'=>'bi-person-heart','bg'=>'rgba(13,110,253,.08)','ic'=>'#0d6efd'],
+              ['k'=>'physical','name'=>'กายภาพ','icon'=>'bi-house-heart','bg'=>'rgba(25,135,84,.10)','ic'=>'#198754'],
+              ['k'=>'financial','name'=>'เศรษฐกิจ','icon'=>'bi-cash-coin','bg'=>'rgba(255,193,7,.18)','ic'=>'#b45309'],
+              ['k'=>'natural','name'=>'ธรรมชาติ','icon'=>'bi-tree-fill','bg'=>'rgba(32,201,151,.14)','ic'=>'#0f766e'],
+              ['k'=>'social','name'=>'ทางสังคม','icon'=>'bi-people-fill','bg'=>'rgba(111,66,193,.10)','ic'=>'#6f42c1'],
+            ];
+          @endphp
+
+          @foreach($rowsCap as $r)
+
+            @php
+              $mean = (float)($capSummary[$r['k']] ?? 0);
+              $sd   = (float)($capStd[$r['k']] ?? 0);
+            @endphp
+
+            <tr style="height:60px; transition:.15s;"
+                onmouseover="this.style.background='rgba(11,127,111,.05)'"
+                onmouseout="this.style.background='transparent'">
+
+              {{-- name --}}
+              <td class="text-start px-3">
+                <div class="d-flex align-items-center gap-2">
+                  <span style="width:32px;height:32px;border-radius:10px;
+                               display:flex;align-items:center;justify-content:center;
+                               background:{{ $r['bg'] }};">
+                    <i class="bi {{ $r['icon'] }}" style="color:{{ $r['ic'] }}"></i>
+                  </span>
+                  <span class="fw-semibold">{{ $r['name'] }}</span>
+                </div>
+              </td>
+
+              {{-- mean --}}
+              <td>
+                <span class="badge rounded-pill font-monospace"
+                      style="min-width:80px;
+                             background:rgba(11,127,111,.12);
+                             color:{{ $teal2 }};
+                             font-weight:700;">
+                  {{ number_format($mean, 2) }}
+                </span>
+              </td>
+
+              {{-- sd --}}
+              <td>
+                <span class="badge rounded-pill font-monospace"
+                      style="min-width:80px;
+                             background:rgba(0,0,0,.06);
+                             color:#374151;
+                             font-weight:700;">
+                  {{ number_format($sd, 2) }}
+                </span>
+              </td>
+
+            </tr>
+          @endforeach
+
+          </tbody>
+        </table>
+      </div>
+
     </div>
-
-    <div class="card-body p-3 p-lg-4">
-      <div class="border rounded-4 bg-white p-2">
-        <div style="height:460px;">
-          <canvas id="healthChart"></canvas>
-        </div>
-      </div>
-
-      <div class="small text-muted mt-2">
-        <i class="bi bi-info-circle me-1"></i>
-        หมายเหตุ: “ไม่ระบุ” คือจำนวนที่ไม่ได้อยู่ใน 4 สถานะหลัก
-      </div>
-    </div>
-
   </div>
 </div>
 
         </div>
 
-      </div>{{-- /col-lg-9 --}}
-    </div>
-  </div>
+      </div>{{-- /capitals section --}}
+    </div>{{-- /col-lg-9 --}}
+  </div>{{-- /row --}}
+</div>{{-- /container --}}
 
-  <script>
+<script>
   // =========================
-  // ✅ HEALTH CHART
+  // ✅ Data from server (SAFE)
   // =========================
-  const labels = @json($labels ?? []);
-  const datasetsRaw = @json($datasets ?? []);
-  const totalMembers = Number(@json($totalMembers ?? 0));
+  const labelsFromServer   = @json($labels ?? []);
+  const datasetsFromServer = @json($datasets ?? []);
+  const sexCounts          = @json($sexCountsSafe);
+
+  const labels = Array.isArray(labelsFromServer) ? [...labelsFromServer] : [];
+  const datasetsRaw = Array.isArray(datasetsFromServer)
+    ? JSON.parse(JSON.stringify(datasetsFromServer))
+    : [];
+
+  let _healthChart = null;
+  let _sexChart = null;
 
   const labelShortMap = {
     'ปกติ': 'ปกติ',
@@ -578,43 +844,20 @@
       label: short,
       data: (ds.data || []).map(v => Number(v || 0)),
       backgroundColor: palette[short] ?? 'rgba(108,117,125,.75)',
-      borderRadius: 10,
-      barPercentage: .85,
-      categoryPercentage: .72,
+      borderRadius: 14,
+      borderSkipped: false,
+      barPercentage: .72,
+      categoryPercentage: .58,
       maxBarThickness: 34,
     };
   });
-
-  const sumKnown = healthDatasets.reduce((acc, ds) => {
-    return acc + (ds.data || []).reduce((s, v) => s + Number(v || 0), 0);
-  }, 0);
-
-  const notSpecified = Math.max(0, totalMembers - sumKnown);
-
-  if (notSpecified > 0) {
-    labels.push('ไม่ระบุ');
-    healthDatasets.forEach(ds => ds.data.push(0));
-
-    const notArr = new Array(labels.length).fill(0);
-    notArr[labels.length - 1] = notSpecified;
-
-    healthDatasets.push({
-      label: 'ไม่ระบุ',
-      data: notArr,
-      backgroundColor: palette['ไม่ระบุ'],
-      borderRadius: 10,
-      barPercentage: .85,
-      categoryPercentage: .72,
-      maxBarThickness: 34,
-    });
-  }
 
   const valueLabelPlugin = {
     id: 'valueLabel',
     afterDatasetsDraw(chart){
       const {ctx} = chart;
       ctx.save();
-      ctx.font = '600 12px system-ui';
+      ctx.font = '600 12px Prompt, system-ui';
       ctx.fillStyle = '#111827';
       ctx.textAlign = 'center';
 
@@ -625,7 +868,7 @@
         meta.data.forEach((bar, i)=>{
           const v = Number(ds.data[i] || 0);
           if(!v) return;
-          if (v < 150) return; // กันรก
+          if (v < 150) return;
           ctx.fillText(v.toLocaleString(), bar.x, bar.y - 6);
         });
       });
@@ -634,18 +877,25 @@
     }
   };
 
+  // =========================
+  // ✅ Health Chart
+  // =========================
   const healthCanvas = document.getElementById('healthChart');
   if (healthCanvas) {
-    new Chart(healthCanvas, {
+    if (_healthChart) { _healthChart.destroy(); _healthChart = null; }
+
+    _healthChart = new Chart(healthCanvas, {
       type: 'bar',
       data: { labels, datasets: healthDatasets },
       plugins: [valueLabelPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 6, right: 8, left: 4, bottom: 0 } },
         scales: {
-          x: { grid: { display:false }, ticks: { font: { size:12 }, maxRotation:0 } },
+          x: { grid: { display:false }, ticks: { font: { size:12, weight:'600' }, maxRotation:0 } },
           y: {
             beginAtZero:true,
             grid:{ color:'rgba(229,231,235,.9)' },
@@ -654,7 +904,7 @@
         },
         plugins: {
           legend: {
-            position:'top',
+            position:'bottom',
             labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:10, font:{ size:12, weight:'600' }, padding:14 }
           },
           tooltip: {
@@ -667,18 +917,21 @@
   }
 
   // =========================
-  // ✅ SEX CHART (อย่าหาย)
+  // ✅ Sex Chart
   // =========================
-  const sexCounts = @json($sexCounts ?? ['ชาย'=>0,'หญิง'=>0]);
-
   const sexCanvas = document.getElementById('sexChart');
   if (sexCanvas) {
-    new Chart(sexCanvas, {
+    if (_sexChart) { _sexChart.destroy(); _sexChart = null; }
+
+    const male = Number(sexCounts['ชาย']||0);
+    const female = Number(sexCounts['หญิง']||0);
+
+    _sexChart = new Chart(sexCanvas, {
       type: 'doughnut',
       data: {
         labels: ['ชาย','หญิง'],
         datasets: [{
-          data: [Number(sexCounts['ชาย']||0), Number(sexCounts['หญิง']||0)],
+          data: [male, female],
           borderWidth: 0
         }]
       },
@@ -686,6 +939,7 @@
         responsive: true,
         maintainAspectRatio: false,
         cutout: '68%',
+        animation: false,
         plugins: {
           legend: { position: 'bottom', labels: { usePointStyle:true, boxWidth:10 } },
           tooltip: { callbacks: { label:(ctx)=>` ${ctx.label}: ${Number(ctx.raw||0).toLocaleString()} คน` } }
@@ -693,8 +947,78 @@
       }
     });
   }
-</script>
 
+  // =========================
+  // ✅ Capitals Radar (SAFE)
+  // =========================
+  const capRadarData = @json($capRadarSafe);
+  const capRadarStd  = @json($capRadarStdSafe);
+
+  const capEl = document.getElementById('capitalsRadar');
+  if (capEl) {
+    const mean = (capRadarData || []).map(v => Number(v || 0));
+    const sd   = (capRadarStd  || []).map(v => Number(v || 0));
+
+    const meanPlus  = mean.map((v,i) => v + (sd[i] || 0));
+    const meanMinus = mean.map((v,i) => Math.max(0, v - (sd[i] || 0)));
+
+    new Chart(capEl, {
+      type: 'radar',
+      data: {
+        labels: ['มนุษย์','กายภาพ','การเงิน','ธรรมชาติ','สังคม'],
+        datasets: [
+          { label:'Mean+SD', data: meanPlus,  borderWidth:2, fill:false, pointRadius:2, borderDash:[6,4] },
+          { label:'Mean-SD', data: meanMinus, borderWidth:2, fill:false, pointRadius:2, borderDash:[6,4] },
+          { label:'Mean',    data: mean,      borderWidth:3, fill:true,  pointRadius:3 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position:'bottom' } },
+        scales: { r: { beginAtZero:true } }
+      }
+    });
+  }
+
+  // =========================
+  // ✅ Total Capitals Trend (ทุนรวมรายปี)
+  // =========================
+  const capYearsLabels  = @json($capYearsLabels ?? []);
+  const capTotalsSeries = @json($capTotalsSeries ?? []);
+
+  const capTrendEl = document.getElementById('capTotalTrend');
+  if (capTrendEl) {
+    new Chart(capTrendEl, {
+      type: 'line',
+      data: {
+        labels: capYearsLabels,
+        datasets: [{
+          label: 'ทุนรวม',
+          data: (capTotalsSeries || []).map(v => Number(v || 0)),
+          tension: 0.35,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${Number(ctx.raw||0).toFixed(2)}` } }
+        },
+        scales: {
+          x: { grid: { display:false } },
+          y: { beginAtZero: true, grid: { color: 'rgba(229,231,235,.8)' } }
+        }
+      }
+    });
+  }
+</script>
 
 </body>
 </html>

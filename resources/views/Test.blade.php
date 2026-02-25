@@ -1,4 +1,3 @@
-{{-- resources/views/test.blade.php --}}
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -11,6 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <style>
+    body{ font-family:'Prompt',system-ui,sans-serif; }
+
     .pagination { gap: 6px; }
     .page-link{
       border-radius: 999px !important;
@@ -50,20 +51,19 @@
   </style>
 </head>
 
-<body class="m-0"
-  style="font-family:'Prompt',system-ui,sans-serif;
-         min-height:100vh;
-         background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%);">
+<body class="m-0 app-bg"
+      style="min-height:100vh;
+             background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%);">
 
 @php
-  $teal  = '#0B7F6F';
-  $teal2 = '#0B5B6B';
-  $actionUrl = route('health.index');
+  $teal  = $teal  ?? '#0B7F6F';
+  $teal2 = $teal2 ?? '#0B5B6B';
+  $actionUrl = $actionUrl ?? route('health.index');
 
   $health      = $health ?? '';
   $district    = $district ?? '';
   $subdistrict = $subdistrict ?? '';
-  $districtList = $districtList ?? collect([]);
+  $districtList    = $districtList ?? collect([]);
   $subdistrictList = $subdistrictList ?? collect([]);
 
   $house_id    = $house_id ?? '';
@@ -75,6 +75,16 @@
   $sex         = $sex ?? '';
   $age_range   = $age_range ?? request('age_range','');
 
+  $AGE_RANGES = $AGE_RANGES ?? [
+    '0-15'  => '0 – 15 ปี',
+    '16-28' => '16 – 28 ปี',
+    '29-44' => '29 – 44 ปี',
+    '45-59' => '45 – 59 ปี',
+    '60-78' => '60 – 78 ปี',
+    '79-97' => '79 – 97 ปี',
+    '98+'   => '98 ปีขึ้นไป',
+  ];
+
   $HEALTH_OPTIONS = $HEALTH_OPTIONS ?? [
     'ปกติ',
     'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)',
@@ -85,17 +95,21 @@
   $HEALTH_NULL_TOKEN = $HEALTH_NULL_TOKEN ?? '__NULL__';
 
   $counts = $counts ?? [];
-  $rows = $rows ?? collect([]);
+  $rows   = $rows ?? collect([]);
 
-  function healthBadge($h){
+  // ✅ ใช้ Closure กันประกาศ function ซ้ำ
+  $healthBadge = function($h){
     $h = trim((string)$h);
     if ($h === 'ปกติ') return ['bg'=>'#0B7F6F','text'=>'#fff','label'=>$h];
     if ($h === 'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)') return ['bg'=>'#F6C277','text'=>'#1f2937','label'=>'ป่วยเรื้อรังไม่ติดเตียง'];
     if ($h === 'พิการพึ่งตนเองได้') return ['bg'=>'#0F9BD8','text'=>'#fff','label'=>$h];
     if ($h === 'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้') return ['bg'=>'#DC3545','text'=>'#fff','label'=>'ติดเตียง/พึ่งตัวเองไม่ได้'];
     return ['bg'=>'#6B7280','text'=>'#fff','label'=>($h ?: 'ไม่ระบุ')];
-  }
+  };
 @endphp
+
+{{-- ✅ Topbar ต้องอยู่ใน body --}}
+@include('layouts.topbar')
 
 <div class="container my-4">
 
@@ -109,7 +123,8 @@
       </a>
     </div>
 
-    <div class="d-flex align-items-center gap-2 flex-wrap">
+    {{-- ✅ อยู่บรรทัดเดียว --}}
+    <div class="d-flex align-items-center gap-2 flex-nowrap justify-content-end">
 
       {{-- Dropdown อำเภอ --}}
       <div class="dropdown">
@@ -125,7 +140,8 @@
             <a class="dropdown-item text-danger"
                href="{{ $actionUrl }}?{{ http_build_query(array_filter([
                   'health'=>$health,
-                  'house_id'=>$house_id, 'survey_year'=>$survey_year, 'fname'=>$fname, 'lname'=>$lname,
+                  'house_id'=>$house_id, 'survey_year'=>$survey_year,
+                  'fname'=>$fname, 'lname'=>$lname,
                   'cid'=>$cid, 'age_range'=>$age_range, 'agey'=>$agey, 'sex'=>$sex,
                ])) }}">
               ล้างตัวกรองอำเภอ
@@ -139,7 +155,8 @@
                  href="{{ $actionUrl }}?{{ http_build_query(array_filter([
                     'district'=>$d,
                     'health'=>$health,
-                    'house_id'=>$house_id, 'survey_year'=>$survey_year, 'fname'=>$fname, 'lname'=>$lname,
+                    'house_id'=>$house_id, 'survey_year'=>$survey_year,
+                    'fname'=>$fname, 'lname'=>$lname,
                     'cid'=>$cid, 'age_range'=>$age_range, 'agey'=>$agey, 'sex'=>$sex,
                  ])) }}">
                 อ.{{ $d }}
@@ -165,7 +182,8 @@
                href="{{ $actionUrl }}?{{ http_build_query(array_filter([
                   'district'=>$district,
                   'health'=>$health,
-                  'house_id'=>$house_id, 'survey_year'=>$survey_year, 'fname'=>$fname, 'lname'=>$lname,
+                  'house_id'=>$house_id, 'survey_year'=>$survey_year,
+                  'fname'=>$fname, 'lname'=>$lname,
                   'cid'=>$cid, 'age_range'=>$age_range, 'agey'=>$agey, 'sex'=>$sex,
                ])) }}">
               ล้างตัวกรองตำบล
@@ -180,7 +198,8 @@
                     'district'=>$district,
                     'subdistrict'=>$sd,
                     'health'=>$health,
-                    'house_id'=>$house_id, 'survey_year'=>$survey_year, 'fname'=>$fname, 'lname'=>$lname,
+                    'house_id'=>$house_id, 'survey_year'=>$survey_year,
+                    'fname'=>$fname, 'lname'=>$lname,
                     'cid'=>$cid, 'age_range'=>$age_range, 'agey'=>$agey, 'sex'=>$sex,
                  ])) }}">
                 ต.{{ $sd }}
@@ -189,14 +208,23 @@
           @endforeach
         </ul>
       </div>
+{{-- Export Excel (ส่ง filter ทั้งหมดไปด้วย) --}}
+<a class="btn btn-sm shadow-sm"
+   style="background:#16a34a;color:#fff;border-radius:10px;"
+   href="{{ route('health.export', request()->query()) }}">x
+  <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+</a>
 
+      {{-- ล้างทั้งหมด --}}
       <a class="btn btn-sm shadow-sm"
          style="background:#fff;border:1px solid #E2E8F0;color:#334155;border-radius:999px;"
          href="{{ $actionUrl }}">
         ล้างทั้งหมด
       </a>
+
     </div>
   </div>
+
 
   {{-- การ์ดสรุป --}}
   <div class="row g-4 mb-3">
@@ -204,7 +232,7 @@
       @php
         $isActive = ($health === $opt);
         $count = $counts[$opt] ?? 0;
-        $b = healthBadge($opt);
+        $b = $healthBadge($opt);
       @endphp
 
       <div class="col-md-3">
@@ -239,6 +267,7 @@
     @endforeach
   </div>
 
+
   <div class="card border-0 shadow-lg rounded-4 bg-white bg-opacity-90">
     <div class="card-body pb-0">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
@@ -260,9 +289,9 @@
     </div>
 
     <form method="GET" action="{{ $actionUrl }}" id="filterForm">
-      @if(!empty($district)) <input type="hidden" name="district" value="{{ $district }}"> @endif
-      @if(!empty($subdistrict)) <input type="hidden" name="subdistrict" value="{{ $subdistrict }}"> @endif
-      @if(!empty($age_range)) <input type="hidden" name="age_range" value="{{ $age_range }}"> @endif
+  @if(!empty($district)) <input type="hidden" name="district" value="{{ $district }}"> @endif
+  @if(!empty($subdistrict)) <input type="hidden" name="subdistrict" value="{{ $subdistrict }}"> @endif
+
 
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -279,59 +308,69 @@
             </tr>
 
             <tr class="filter-row">
-              <th>
-                <select class="form-select form-select-sm" name="survey_year">
-                  <option value="">ปีที่สำรวจ (ทั้งหมด)</option>
-                  @foreach([2564,2565,2566,2567,2568,2569] as $y)
-                    <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
-                  @endforeach
-                </select>
-              </th>
+  <th>
+    <select class="form-select form-select-sm" name="survey_year">
+      <option value="">ปีที่สำรวจ (ทั้งหมด)</option>
+      @foreach([2564,2565,2566,2567,2568] as $y)
+        <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
+      @endforeach
+    </select>
+  </th>
 
-              <th class="ps-3"><input class="form-control form-control-sm" name="house_id" value="{{ $house_id }}" placeholder="รหัสบ้าน"></th>
-              <th><input class="form-control form-control-sm" name="fname" value="{{ $fname }}" placeholder="ชื่อ"></th>
-              <th><input class="form-control form-control-sm" name="lname" value="{{ $lname }}" placeholder="สกุล"></th>
+  <th class="ps-3">
+    <input class="form-control form-control-sm" name="house_id" value="{{ $house_id }}" placeholder="รหัสบ้าน">
+  </th>
 
-              <th>
-                <select class="form-select form-select-sm" name="age_range">
-                  <option value="">ช่วงอายุ (ทั้งหมด)</option>
-                  <option value="0-15"  @selected($age_range==='0-15')>0 – 15 ปี</option>
-                  <option value="16-28" @selected($age_range==='16-28')>16 – 28 ปี</option>
-                  <option value="29-44" @selected($age_range==='29-44')>29 – 44 ปี</option>
-                  <option value="45-59" @selected($age_range==='45-59')>45 – 59 ปี</option>
-                  <option value="60-78" @selected($age_range==='60-78')>60 – 78 ปี</option>
-                  <option value="79-97" @selected($age_range==='79-97')>79 – 97 ปี</option>
-                  <option value="98+"   @selected($age_range==='98+')>98 ปีขึ้นไป</option>
-                </select>
-              </th>
+  <th>
+    <input class="form-control form-control-sm" name="fname" value="{{ $fname }}" placeholder="ชื่อ">
+  </th>
 
-              <th>
-                <select class="form-select form-select-sm" name="sex">
-                  <option value="">เพศ (ทั้งหมด)</option>
-                  <option value="ชาย"  @selected($sex === 'ชาย')>ชาย</option>
-                  <option value="หญิง" @selected($sex === 'หญิง')>หญิง</option>
-                </select>
-              </th>
+  <th>
+    <input class="form-control form-control-sm" name="lname" value="{{ $lname }}" placeholder="สกุล">
+  </th>
 
-              <th style="width:220px; max-width:220px;">
-                <select class="form-select form-select-sm" name="health" style="max-width:220px;">
-                  <option value="">สุขภาพ (ทั้งหมด)</option>
-                  <option value="{{ $HEALTH_NULL_TOKEN }}" @selected($health === $HEALTH_NULL_TOKEN)>ไม่ระบุ</option>
-                  @foreach($HEALTH_OPTIONS as $opt)
-                    <option value="{{ $opt }}" @selected($health === $opt)>{{ $opt }}</option>
-                  @endforeach
-                </select>
-              </th>
+  <th>
+    <select class="form-select form-select-sm" name="age_range">
+      <option value="">ช่วงอายุ (ทั้งหมด)</option>
+      <option value="0-15"  @selected($age_range==='0-15')>0 – 15 ปี</option>
+      <option value="16-28" @selected($age_range==='16-28')>16 – 28 ปี</option>
+      <option value="29-44" @selected($age_range==='29-44')>29 – 44 ปี</option>
+      <option value="45-59" @selected($age_range==='45-59')>45 – 59 ปี</option>
+      <option value="60-78" @selected($age_range==='60-78')>60 – 78 ปี</option>
+      <option value="79-97" @selected($age_range==='79-97')>79 – 97 ปี</option>
+      <option value="98+"   @selected($age_range==='98+')>98 ปีขึ้นไป</option>
+    </select>
+  </th>
 
-              <th></th>
-            </tr>
+  <th>
+    <select class="form-select form-select-sm" name="sex">
+      <option value="">เพศ (ทั้งหมด)</option>
+      <option value="ชาย"  @selected($sex === 'ชาย')>ชาย</option>
+      <option value="หญิง" @selected($sex === 'หญิง')>หญิง</option>
+    </select>
+  </th>
+
+  <th style="width:220px; max-width:220px;">
+    <select class="form-select form-select-sm" name="health" style="max-width:220px;">
+      <option value="">สุขภาพ (ทั้งหมด)</option>
+      <option value="{{ $HEALTH_NULL_TOKEN }}" @selected($health === $HEALTH_NULL_TOKEN)>ไม่ระบุ</option>
+      @foreach($HEALTH_OPTIONS as $opt)
+        <option value="{{ $opt }}" @selected($health === $opt)>{{ $opt }}</option>
+      @endforeach
+    </select>
+  </th>
+
+  <th></th>
+</tr>
+
+              
           </thead>
 
           <tbody>
             @forelse($rows as $r)
-              @php $b = healthBadge($r->human_Health); @endphp
+              @php $b = $healthBadge($r->human_Health); @endphp
 
-            <tr
+              <tr
                 data-house="{{ e($r->house_Id) }}"
                 data-district="{{ e($r->survey_District) }}"
                 data-subdistrict="{{ e($r->survey_Subdistrict) }}"
@@ -351,7 +390,7 @@
                 data-village-no="{{ e($r->village_No) }}"
                 data-village-name="{{ e($r->village_Name) }}"
                 data-postcode="{{ e($r->survey_Postcode) }}"
-                >
+              >
                 <td class="ps-3 fw-semibold">{{ $r->survey_Year }}</td>
                 <td>{{ $r->house_Id }}</td>
                 <td>{{ $r->human_Member_fname }}</td>
@@ -396,11 +435,15 @@
     @endif
   </div>
 </div>
+
+
+{{-- =========================
+     MODAL (ครบ)
+     ========================= --}}
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content rounded-4 shadow">
 
-      <!-- Header -->
       <div class="modal-header text-white"
            style="background:linear-gradient(135deg,#0B7F6F,#0B5B6B)">
         <div class="d-flex align-items-center gap-2">
@@ -415,11 +458,10 @@
         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
-      <!-- Body -->
       <div class="modal-body bg-light">
         <div class="row g-3">
 
-          <!-- บ้าน / พื้นที่ -->
+          {{-- บ้าน / พื้นที่ --}}
           <div class="col-lg-6">
             <div class="card h-100 border-0 shadow-sm rounded-4">
               <div class="card-header bg-white border-0 pb-0">
@@ -479,7 +521,7 @@
             </div>
           </div>
 
-          <!-- บุคคล -->
+          {{-- บุคคล --}}
           <div class="col-lg-6">
             <div class="card h-100 border-0 shadow-sm rounded-4">
               <div class="card-header bg-white border-0 pb-0">
@@ -491,7 +533,6 @@
               <div class="card-body pt-2">
                 <div class="row g-2 small">
 
-                  <!-- ลำดับ + คำนำหน้า/ชื่อสกุล -->
                   <div class="col-12">
                     <div class="row g-2">
 
@@ -516,7 +557,6 @@
                     </div>
                   </div>
 
-                  <!-- อายุ + เพศ -->
                   <div class="col-12">
                     <div class="row g-2">
                       <div class="col-6 col-md-4">
@@ -537,7 +577,6 @@
                     </div>
                   </div>
 
-                  <!-- บัตรประชาชน -->
                   <div class="col-12">
                     <div class="border rounded-3 p-2 bg-white">
                       <div class="text-secondary small">บัตรประชาชน</div>
@@ -545,7 +584,6 @@
                     </div>
                   </div>
 
-                  <!-- เบอร์ติดต่อ + ปุ่มโทร -->
                   <div class="col-12">
                     <div class="border rounded-3 p-2 bg-white d-flex align-items-center justify-content-between gap-2">
                       <div>
@@ -561,7 +599,6 @@
                     </div>
                   </div>
 
-                  <!-- สุขภาพ -->
                   <div class="col-12">
                     <div class="border rounded-3 p-2 bg-success-subtle">
                       <div class="text-secondary small">สุขภาพ</div>
@@ -574,7 +611,7 @@
             </div>
           </div>
 
-          <!-- แผนที่ -->
+          {{-- แผนที่ --}}
           <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4">
               <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
@@ -604,7 +641,6 @@
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="modal-footer bg-white border-0">
         <button class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">
           ปิด
@@ -615,8 +651,9 @@
   </div>
 </div>
 
+
 <script>
-  // ✅ Enter ในช่องค้นหา -> submit (แก้ "ค้นหาไม่ได้")
+  // ✅ Enter ในช่องค้นหา -> submit
   document.getElementById('filterForm')?.addEventListener('keydown', function(e){
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -644,7 +681,7 @@
     set('m_house_number', d.houseNumber);
     set('m_village_no', d.villageNo);
     set('m_village_name', d.villageName);
-    set('m_postcode', d.postcode);
+    set('m_postcode', d.postcode, '');
     set('m_district', d.district);
     set('m_subdistrict', d.subdistrict);
     set('m_year', d.year);
@@ -658,15 +695,30 @@
     set('m_order', d.order);
     set('m_sex', d.sex);
     set('m_agey', d.agey);
-    set('m_title', d.title, ''); // ✅ คำนำหน้า
+    set('m_title', d.title, '');
     set('m_fname', d.fname);
     set('m_lname', d.lname);
     set('m_cid', d.cid);
     set('m_phone', d.phone);
 
+    // สุขภาพ
     const hv = (d.health ?? '').toString().trim();
     const healthEl = document.getElementById('m_health');
     if (healthEl) healthEl.textContent = hv !== '' ? hv : 'ไม่ระบุ';
+
+    // ปุ่มโทร
+    const phone = (d.phone ?? '').toString().trim();
+    const callBtn = document.getElementById('m_call');
+    if (callBtn) {
+      const clean = phone.replace(/\s+/g,'');
+      if (clean) {
+        callBtn.href = `tel:${clean}`;
+        callBtn.classList.remove('d-none');
+      } else {
+        callBtn.href = '#';
+        callBtn.classList.add('d-none');
+      }
+    }
 
     // แผนที่
     const wrap   = document.getElementById('m_map_wrap');
